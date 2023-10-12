@@ -1,0 +1,75 @@
+class MemoryBus:
+    def __init__(self, initial_values):
+        self.memory = initial_values
+
+    def read(self, address):
+        return self.memory[address]
+
+    def write(self, address, value):
+        self.memory[address] = value
+
+
+class Cache:
+    def __init__(self):
+        self.cache = {}
+        self.cache_on = False
+
+    def fetch_data(self, address):
+        if self.cache_on and address in self.cache:
+            return self.cache[address]
+        return None
+
+    def write_data(self, address, data):
+        if self.cache_on:
+            self.cache[address] = data
+
+    def toggle(self, code):
+        if code == 0:
+            self.cache_on = False
+        elif code == 1:
+            self.cache_on = True
+        elif code == 2:
+            self.cache.clear()
+
+
+class CPU:
+    def __init__(self):
+        self.registers = [0] * 32
+        self.PC = 0
+        self.mips = MIPS(self)
+        self.cache = Cache()
+
+    def execute(self, instruction):
+        getattr(self.mips, instruction[0])(*instruction[1:])
+
+
+class MIPS:
+    def __init__(self, cpu):
+        self.cpu = cpu
+
+    def ADD(self, Rd, Rs, Rt):
+        self.cpu.registers[Rd] = self.cpu.registers[Rs] + self.cpu.registers[Rt]
+
+
+def parse_file(filename):
+    with open(filename, 'r') as file:
+        return [line.strip().split() for line in file]
+
+
+def main():
+    instructions = parse_file('instructions.txt')
+    memory_bus_values = [0] * 1024  # default values
+    memory_bus_values[:len(parse_file('memory_bus.txt'))] = parse_file('memory_bus.txt')
+
+    memory_bus = MemoryBus(memory_bus_values)
+    cpu = CPU()
+
+    for instruction in instructions:
+        print(f"Processing instruction: {instruction[0]}")
+        cpu.execute(instruction)
+        print("Registers:", cpu.registers[:10])  # Just displaying first 10 registers for brevity
+        print("Memory:", memory_bus.memory[:10])  # Displaying first 10 memory cells
+
+
+if __name__ == "__main__":
+    main()
